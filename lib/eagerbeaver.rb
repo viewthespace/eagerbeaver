@@ -3,7 +3,7 @@ require "eagerbeaver/version"
 class EagerBeaver
   def initialize(model, preloads)
     @model = model
-    @preloads = Array(preloads)
+    @preloads = preloads
   end
 
   def errors
@@ -26,10 +26,31 @@ class EagerBeaver
   end
 
   def association_name(model_string, association_name_or_alias)
-    association = model_string.constantize.reflect_on_all_associations.find { |a| a.name == association_name_or_alias }
-    association.try(:source_reflection_name) ||
-      association.try(:options).try(:[], :class_name) ||
-      association_name_or_alias
+    association = match_association(model_string.to_s, association_name_or_alias)
+    return association_name_or_alias unless association
+
+    options = association.options
+
+    if options[:through] && options[:source]
+      source = options[:source_type] || options[:source]
+      through = association_name(model_string, options[:through]) ||
+        association_name(options[:through], source)
+      association_name(through, source)
+    else
+      options[:class_name] || association_name_or_alias
+    end
+  end
+
+  def match_association(model_string, association)
+    constantize(model_string).reflect_on_all_associations.find { |a| a.name == association }
+  end
+
+  def constantize(model_string)
+    if model_string.first == model_string.first.upcase
+      model_string.singularize.constantize
+    else
+      model_string.split('_').map(&:capitalize).join.singularize.constantize
+    end
   end
 
   attr_reader :model, :preloads

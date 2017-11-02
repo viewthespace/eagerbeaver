@@ -13,7 +13,8 @@ RSpec.describe EagerBeaver do
           { spaces: { floor: :property } },
           :tenant,
           { spaces: { targeted_by: { lease_terms: :space_lease_terms } } },
-          { spaces: { prop: :floors } }
+          { spaces: { prop: :floors } },
+          { spaces: { acc: :properties } }
         ]
       end
 

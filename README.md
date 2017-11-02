@@ -66,7 +66,45 @@ end
 
 This expectation would fail, because `.errors` will return `['foobar is not an association of Lease']`.
 
-EagerBeaver works with nested `includes` as well. Check out the specs to see more examples.
+### Nested Associations
+
+EagerBeaver works with nested associations that are aliased with `source` and `class_name` as well.
+
+```ruby
+class Lease < ActiveRecord::Base
+  has_many :targets, class_name: 'right'
+
+  has_one :primary_account, through: :targets, source: :account
+end
+
+class Right < ActiveRecord::Base
+  belongs_to :account
+  belongs_to :lease
+  belongs_to :space
+  belongs_to :floor
+
+  has_many :lease_terms
+end
+
+class Account < ActiveRecord::Base
+  has_many :properties
+end
+
+describe Lease do
+  describe 'includes' do
+    let!(:includes) do
+      [
+        { targets: [:space, :floor] },
+        { primary_account: :properties }
+      ]
+    end
+
+    it 'is valid' do
+      expect(EagerBeaver.new(Lease, includes).errors).to be_empty # success!
+    end
+  end
+end
+```
 
 ## License
 
